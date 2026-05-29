@@ -1,0 +1,6 @@
+{
+  "name": "Editorial Magazine",
+  "description": "An interactive digital magazine featuring GSAP-powered brutalist typography, dynamic photo essays, and tactile editorial layouts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
