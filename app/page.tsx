@@ -91,43 +91,60 @@ export default function Page() {
     const cursor = document.querySelector('.custom-cursor');
     const follower = document.querySelector('.custom-cursor-follower');
     
+    const cleanups: (() => void)[] = [];
+
     if (cursor && follower) {
       const xTo = gsap.quickTo(cursor, "x", { duration: 0.1, ease: "power3" });
       const yTo = gsap.quickTo(cursor, "y", { duration: 0.1, ease: "power3" });
       const xToF = gsap.quickTo(follower, "x", { duration: 0.4, ease: "power3" });
       const yToF = gsap.quickTo(follower, "y", { duration: 0.4, ease: "power3" });
 
-      window.addEventListener('mousemove', (e) => {
+      const onMouseMoveWindow = (e: MouseEvent) => {
         xTo(e.clientX);
         yTo(e.clientY);
         xToF(e.clientX);
         yToF(e.clientY);
-      });
+      };
+      
+      window.addEventListener('mousemove', onMouseMoveWindow);
+      cleanups.push(() => window.removeEventListener('mousemove', onMouseMoveWindow));
 
       const hoverElements = gsap.utils.toArray('button, a, .group, .magnetic');
       hoverElements.forEach((el: any) => {
-          el.addEventListener('mouseenter', (e: any) => {
+          const onEnter = (e: any) => {
               gsap.to(cursor, { scale: 3, backgroundColor: "transparent", border: "1px solid white", duration: 0.2 });
               if (e.target.closest('.archival-item')) {
                   gsap.to(follower, { opacity: 1, duration: 0.2 });
               }
-          });
-          el.addEventListener('mouseleave', () => {
+          };
+          const onLeave = () => {
               gsap.to(cursor, { scale: 1, backgroundColor: "white", border: "none", duration: 0.2 });
               gsap.to(follower, { opacity: 0, duration: 0.2 });
+          };
+          el.addEventListener('mouseenter', onEnter);
+          el.addEventListener('mouseleave', onLeave);
+          cleanups.push(() => {
+              el.removeEventListener('mouseenter', onEnter);
+              el.removeEventListener('mouseleave', onLeave);
           });
       });
       
       const magElements = gsap.utils.toArray('.magnetic');
       magElements.forEach((el: any) => {
-          el.addEventListener('mousemove', (e: MouseEvent) => {
+          const onMove = (e: MouseEvent) => {
               const rect = el.getBoundingClientRect();
               const x = e.clientX - rect.left - rect.width / 2;
               const y = e.clientY - rect.top - rect.height / 2;
               gsap.to(el, { x: x * 0.3, y: y * 0.3, duration: 0.3, ease: 'power2.out' });
-          });
-          el.addEventListener('mouseleave', () => {
+          };
+          const onLeave = () => {
               gsap.to(el, { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.3)' });
+          };
+          el.addEventListener('mousemove', onMove);
+          el.addEventListener('mouseleave', onLeave);
+          cleanups.push(() => {
+              el.removeEventListener('mousemove', onMove);
+              el.removeEventListener('mouseleave', onLeave);
           });
       });
     }
@@ -381,14 +398,14 @@ export default function Page() {
        }
     });
 
-    // GSAP theme inversion removed as requested
+    return () => {
+       cleanups.forEach(cleanup => cleanup());
+    };
   }, { scope: container });
 
   return (
     <main ref={container} className="relative w-full overflow-hidden bg-[#0A0A0A] text-white font-sans cursor-none selection:bg-white/30 selection:text-white">
       <AudioController />
-      {/* --- GLOBAL GRAIN OVERLAY --- */}
-      <div className="fixed inset-0 z-[200] pointer-events-none opacity-20" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
 
       {/* --- GLOBAL SCROLL PROGRESS --- */}
       <div className="fixed top-0 left-0 w-full h-[2px] bg-white/10 z-[190] pointer-events-none">
@@ -543,9 +560,9 @@ export default function Page() {
             
             return (
               <Link key={i} href={`/article/${item.id}`} className={`${isLarge ? 'md:col-span-2 md:row-span-2' : isWide ? 'md:col-span-2' : 'md:col-span-1'} archival-item bg-[#111] border border-white/10 p-8 flex flex-col justify-between ${isLarge ? 'min-h-[400px] md:min-h-[600px]' : 'min-h-[250px] md:min-h-[300px]'} relative overflow-hidden group cursor-pointer block`}>
-                <Image src={`https://picsum.photos/seed/${item.img}/800/800`} alt={item.title} fill className="object-cover opacity-20 grayscale transition-transform duration-700 group-hover:scale-105" referrerPolicy="no-referrer" />
+                <Image src={`https://picsum.photos/seed/${item.img}/800/800`} alt={item.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover opacity-20 grayscale transition-transform duration-700 group-hover:scale-105" referrerPolicy="no-referrer" />
                 <div className="hover-reveal-img absolute inset-0 z-0 pointer-events-none">
-                   <Image src={`https://picsum.photos/seed/${item.img}/800/800`} alt={item.title} fill className="object-cover opacity-80" referrerPolicy="no-referrer" />
+                   <Image src={`https://picsum.photos/seed/${item.img}/800/800`} alt={item.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover opacity-80" referrerPolicy="no-referrer" />
                 </div>
                 <div className="relative z-10 flex justify-between w-full">
                    <span className="text-[10px] uppercase tracking-[0.3em] text-white/60 drop-shadow-md bg-black/40 px-2 py-1 rounded backdrop-blur-md">Vol. {item.vol}</span>
@@ -619,7 +636,7 @@ export default function Page() {
              <h2 className="text-6xl md:text-[8vw] font-black uppercase tracking-tighter text-white/10">Expand.</h2>
           </div>
           <div className="reveal-image-container w-full h-full relative z-10" style={{ clipPath: "inset(40% 40% 40% 40%)" }}>
-             <Image src="https://picsum.photos/seed/fullwidth/1920/1080" alt="Full Width" fill className="object-cover grayscale" referrerPolicy="no-referrer" />
+             <Image src="https://picsum.photos/seed/fullwidth/1920/1080" alt="Full Width" fill sizes="100vw" className="object-cover grayscale" referrerPolicy="no-referrer" />
           </div>
         </div>
       </section>
@@ -635,7 +652,7 @@ export default function Page() {
         <div className="horizontal-wrapper flex flex-col md:flex-row gap-8 md:gap-12 px-6 md:px-[10vw] mt-16 md:mt-0 md:flex-nowrap items-center md:h-full w-full md:w-max">
           {photoEssay.map((item, i) => (
              <Link href={`/article/photo-${item.img}`} key={i} className="w-full md:w-[45vw] h-[50vh] md:h-[65vh] shrink-0 border border-white/10 p-0 bg-[#000] relative group flex flex-col justify-between overflow-hidden cursor-pointer block">
-                <Image src={`https://picsum.photos/seed/${item.img}/1200/800`} alt={item.title} fill className="object-cover opacity-30 group-hover:opacity-80 transition-opacity duration-700 grayscale" referrerPolicy="no-referrer" />
+                <Image src={`https://picsum.photos/seed/${item.img}/1200/800`} alt={item.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover opacity-30 group-hover:opacity-80 transition-opacity duration-700 grayscale" referrerPolicy="no-referrer" />
                 <div className="relative z-10 p-8 md:p-12 flex justify-between items-start h-full flex-col">
                     <div className="flex justify-between items-start w-full">
                        <div className="text-[10px] uppercase tracking-[0.3em] text-white/80 mix-blend-difference">Plate 0{i + 1}</div>
@@ -655,13 +672,13 @@ export default function Page() {
       <section className="parallax-container relative h-[120vh] overflow-hidden border-b border-white/10 flex items-center justify-center">
           <div className="absolute inset-0 z-0">
             <div className="parallax-img absolute top-[10%] left-[5%] w-[35vw] h-[45vh] grayscale opacity-30" data-speed="1.2">
-               <Image src="https://picsum.photos/seed/px1/800/1000" alt="Parallax 1" fill className="object-cover" referrerPolicy="no-referrer" />
+               <Image src="https://picsum.photos/seed/px1/800/1000" alt="Parallax 1" fill sizes="(max-width: 768px) 50vw, 35vw" className="object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="parallax-img absolute top-[30%] right-[5%] w-[25vw] h-[55vh] grayscale opacity-40" data-speed="0.6">
-               <Image src="https://picsum.photos/seed/px2/600/1200" alt="Parallax 2" fill className="object-cover" referrerPolicy="no-referrer" />
+               <Image src="https://picsum.photos/seed/px2/600/1200" alt="Parallax 2" fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="parallax-img absolute bottom-[-10%] left-[20%] w-[45vw] h-[35vh] grayscale opacity-20" data-speed="1.8">
-               <Image src="https://picsum.photos/seed/px3/1200/800" alt="Parallax 3" fill className="object-cover" referrerPolicy="no-referrer" />
+               <Image src="https://picsum.photos/seed/px3/1200/800" alt="Parallax 3" fill sizes="(max-width: 768px) 50vw, 45vw" className="object-cover" referrerPolicy="no-referrer" />
             </div>
           </div>
           <h2 className="relative z-10 text-[15vw] md:text-[12vw] font-black uppercase tracking-tighter text-white mix-blend-exclusion leading-none">

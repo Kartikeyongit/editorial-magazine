@@ -13,7 +13,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'Editorial Magazine',
+  title: 'GSAP Animation Engine',
   description: 'Client-side web app showcasing GSAP animations.',
 };
 

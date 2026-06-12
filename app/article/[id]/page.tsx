@@ -90,7 +90,7 @@ export default function ArticlePage() {
             </nav>
 
             <div className="hero-banner relative w-full h-[60vh] overflow-hidden">
-                <Image src={`https://picsum.photos/seed/${article.img}/1920/1080`} alt={article.title} fill className="object-cover grayscale" referrerPolicy="no-referrer" />
+                <Image src={`https://picsum.photos/seed/${article.img}/1920/1080`} alt={article.title} fill priority sizes="100vw" className="object-cover grayscale" referrerPolicy="no-referrer" />
                 <div className="absolute inset-0 bg-black/40"></div>
                 <div className="absolute bottom-12 left-12">
                    <span className="text-[10px] uppercase tracking-[0.3em] font-semibold text-white/60 drop-shadow-md mb-4 block">Vol. {article.vol}</span>
